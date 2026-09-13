@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f172a">
+<title>RealTime Chat</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+  margin:0;
+  padding:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  font-family:Arial,sans-serif;
+  background:#020617;
+  color:white;
+}
+
+button,input,textarea{
+  font:inherit;
+}
+
+.app{
+  width:100%;
+  height:100dvh;
+  max-width:550px;
+  margin:auto;
+  background:#0f172a;
+  overflow:hidden;
+}
+
+/* AUTH */
+
+#authScreen{
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:
+    radial-gradient(circle at top,#3730a3 0%,transparent 38%),
+    linear-gradient(160deg,#020617,#111827);
+}
+
+.authBox{
+  width:100%;
+  max-width:420px;
+  padding:28px 22px;
+  border-radius:25px;
+  background:rgba(15,23,42,.94);
+  border:1px solid rgba(255,255,255,.1);
+  box-shadow:0 25px 70px rgba(0,0,0,.5);
+}
+
+.logo{
+  width:70px;
+  height:70px;
+  margin:auto auto 18px;
+  border-radius:22px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:32px;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+}
+
+h1{
+  text-align:center;
+  margin:0;
+  font-size:26px;
+}
+
+.subtitle{
+  text-align:center;
+  color:#94a3b8;
+  font-size:14px;
+  margin:8px 0 25px;
+}
+
+.field{
+  margin-bottom:14px;
+}
+
+.field label{
+  display:block;
+  color:#cbd5e1;
+  font-size:13px;
+  margin-bottom:7px;
+}
+
+.field input{
+  width:100%;
+  height:50px;
+  padding:0 15px;
+  border-radius:13px;
+  border:1px solid #334155;
+  outline:none;
+  background:#020617;
+  color:white;
+  font-size:15px;
+}
+
+.field input:focus{
+  border-color:#6366f1;
+  box-shadow:0 0 0 3px rgba(99,102,241,.12);
+}
+
+.primaryBtn{
+  width:100%;
+  height:52px;
+  border:0;
+  border-radius:14px;
+  color:white;
+  font-weight:bold;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  cursor:pointer;
+}
+
+.primaryBtn:active{
+  transform:scale(.98);
+}
+
+.switch{
+  text-align:center;
+  color:#94a3b8;
+  margin-top:18px;
+  font-size:14px;
+}
+
+.switch button{
+  border:0;
+  background:none;
+  color:#818cf8;
+  font-weight:bold;
+}
+
+.notice{
+  display:none;
+  padding:11px;
+  border-radius:10px;
+  margin-bottom:14px;
+  font-size:13px;
+  line-height:1.4;
+}
+
+.error{
+  background:rgba(239,68,68,.12);
+  color:#fca5a5;
+  border:1px solid rgba(239,68,68,.25);
+}
+
+.success{
+  background:rgba(34,197,94,.12);
+  color:#86efac;
+  border:1px solid rgba(34,197,94,.25);
+}
+
+/* CHAT */
+
+#chatScreen{
+  display:none;
+  flex-direction:column;
+  width:100%;
+  height:100%;
+  background:#020617;
+}
+
+.chatHeader{
+  min-height:70px;
+  padding:11px 13px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:1px solid #1e293b;
+  background:#0f172a;
+}
+
+.headerLeft{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  min-width:0;
+}
+
+.avatar{
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+  background:linear-gradient(135deg,#6366f1,#a855f7);
+}
+
+.userInfo{
+  min-width:0;
+}
+
+.userInfo h2{
+  margin:0;
+  font-size:16px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.status{
+  color:#86efac;
+  font-size:11px;
+  margin-top:3px;
+}
+
+.logout{
+  border:1px solid #334155;
+  background:#1e293b;
+  color:#cbd5e1;
+  border-radius:10px;
+  padding:9px 11px;
+  font-size:12px;
+}
+
+#messages{
+  flex:1;
+  overflow-y:auto;
+  padding:15px 11px;
+}
+
+.empty{
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  color:#64748b;
+  font-size:14px;
+}
+
+.messageRow{
+  display:flex;
+  margin:6px 0;
+}
+
+.messageRow.mine{
+  justify-content:flex-end;
+}
+
+.bubble{
+  max-width:82%;
+  padding:9px 12px;
+  border-radius:16px;
+  background:#1e293b;
+  overflow-wrap:anywhere;
+}
+
+.mine .bubble{
+  background:linear-gradient(135deg,#4f46e5,#7c3aed);
+  border-bottom-right-radius:5px;
+}
+
+.messageRow:not(.mine) .bubble{
+  border-bottom-left-radius:5px;
+}
+
+.sender{
+  color:#a5b4fc;
+  font-size:10px;
+  font-weight:bold;
+  margin-bottom:3px;
+}
+
+.text{
+  font-size:14px;
+  line-height:1.4;
+  white-space:pre-wrap;
+}
+
+.time{
+  text-align:right;
+  font-size:9px;
+  opacity:.6;
+  margin-top:4px;
+}
+
+.composer{
+  display:flex;
+  gap:8px;
+  padding:9px 10px calc(9px + env(safe-area-inset-bottom));
+  background:#0f172a;
+  border-top:1px solid #1e293b;
+}
+
+#messageInput{
+  flex:1;
+  min-width:0;
+  min-height:46px;
+  max-height:120px;
+  resize:none;
+  outline:none;
+  border:1px solid #334155;
+  border-radius:15px;
+  background:#020617;
+  color:white;
+  padding:13px;
+  font-size:14px;
+}
+
+#messageInput:focus{
+  border-color:#6366f1;
+}
+
+#sendBtn{
+  width:48px;
+  height:46px;
+  border:0;
+  border-radius:14px;
+  background:#6366f1;
+  color:white;
+  font-size:19px;
+}
+
+@media(min-width:600px){
+  body{
+    padding:12px;
+    background:#000;
+  }
+
+  .app{
+    height:calc(100dvh - 24px);
+    border-radius:22px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- ================= AUTH ================= -->
+
+<section id="authScreen">
+
+<div class="authBox">
+
+<div class="logo">💬</div>
+
+<h1 id="authTitle">Create Account</h1>
+
+<p class="subtitle">
+Real-time chat powered by Supabase
+</p>
+
+<div id="errorBox" class="notice error"></div>
+<div id="successBox" class="notice success"></div>
+
+<div class="field" id="usernameField">
+<label>Username</label>
+<input id="username" type="text" maxlength="30"
+placeholder="Enter username">
+</div>
+
+<div class="field">
+<label>Email</label>
+<input id="email" type="email"
+autocomplete="email"
+placeholder="you@example.com">
+</div>
+
+<div class="field">
+<label>Password</label>
+<input id="password" type="password"
+autocomplete="current-password"
+placeholder="Minimum 6 characters">
+</div>
+
+<button id="authBtn" class="primaryBtn">
+Create Account
+</button>
+
+<div class="switch">
+<span id="switchText">Already have an account?</span>
+<button id="switchBtn">Login</button>
+</div>
+
+</div>
+</section>
+
+
+<!-- ================= CHAT ================= -->
+
+<section id="chatScreen">
+
+<header class="chatHeader">
+
+<div class="headerLeft">
+
+<div id="avatar" class="avatar">U</div>
+
+<div class="userInfo">
+<h2 id="currentUsername">Chat</h2>
+<div class="status">● Real-time connected</div>
+</div>
+
+</div>
+
+<button id="logoutBtn" class="logout">
+Logout
+</button>
+
+</header>
+
+
+<main id="messages">
+
+<div id="emptyChat" class="empty">
+No messages yet.<br>
+Send the first message! 💬
+</div>
+
+</main>
+
+
+<form id="composer" class="composer">
+
+<textarea
+id="messageInput"
+rows="1"
+maxlength="2000"
+placeholder="Write a message..."
+></textarea>
+
+<button id="sendBtn" type="submit">➤</button>
+
+</form>
+
+</section>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   SUPABASE CONFIG
+   ===================================================== */
+
+const SUPABASE_URL =
+"https://pxmuwfezjfwyxxinpmww.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_THZeuOZGrRrRKqbf8tDpVQ_oEiBQIXo";
+
+
+/* =====================================================
+   SUPABASE
+   ===================================================== */
+
+const {createClient}=supabase;
+
+const db=createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY,
+  {
+    auth:{
+      persistSession:true,
+      autoRefreshToken:true,
+      detectSessionInUrl:true
+    }
+  }
+);
+
+
+/* =====================================================
+   ELEMENTS
+   ===================================================== */
+
+const authScreen=document.getElementById("authScreen");
+const chatScreen=document.getElementById("chatScreen");
+
+const authTitle=document.getElementById("authTitle");
+const authBtn=document.getElementById("authBtn");
+
+const switchBtn=document.getElementById("switchBtn");
+const switchText=document.getElementById("switchText");
+
+const usernameField=document.getElementById("usernameField");
+const username=document.getElementById("username");
+const email=document.getElementById("email");
+const password=document.getElementById("password");
+
+const errorBox=document.getElementById("errorBox");
+const successBox=document.getElementById("successBox");
+
+const currentUsername=document.getElementById("currentUsername");
+const avatar=document.getElementById("avatar");
+
+const messages=document.getElementById("messages");
+const emptyChat=document.getElementById("emptyChat");
+
+const composer=document.getElementById("composer");
+const messageInput=document.getElementById("messageInput");
+const sendBtn=document.getElementById("sendBtn");
+
+const logoutBtn=document.getElementById("logoutBtn");
+
+
+/* =====================================================
+   STATE
+   ===================================================== */
+
+let loginMode=false;
+let currentUser=null;
+let currentProfile=null;
+let realtimeChannel=null;
+
+
+/* =====================================================
+   MESSAGES
+   ===================================================== */
+
+function showError(text){
+  errorBox.textContent=text;
+  errorBox.style.display="block";
+  successBox.style.display="none";
+}
+
+function showSuccess(text){
+  successBox.textContent=text;
+  successBox.style.display="block";
+  errorBox.style.display="none";
+}
+
+function clearNotice(){
+  errorBox.style.display="none";
+  successBox.style.display="none";
+}
+
+
+/* =====================================================
+   LOGIN / SIGNUP SWITCH
+   ===================================================== */
+
+switchBtn.onclick=()=>{
+
+  loginMode=!loginMode;
+
+  clearNotice();
+
+  if(loginMode){
+
+    authTitle.textContent="Welcome Back";
+
+    usernameField.style.display="none";
+
+    authBtn.textContent="Login";
+
+    switchText.textContent="Don't have an account?";
+
+    switchBtn.textContent="Create Account";
+
+  }else{
+
+    authTitle.textContent="Create Account";
+
+    usernameField.style.display="block";
+
+    authBtn.textContent="Create Account";
+
+    switchText.textContent="Already have an account?";
+
+    switchBtn.textContent="Login";
+  }
+};
+
+
+/* =====================================================
+   AUTH
+   ===================================================== */
+
+authBtn.onclick=async()=>{
+
+  clearNotice();
+
+  const mail=email.value.trim();
+  const pass=password.value;
+  const name=username.value.trim();
+
+  if(!mail){
+    showError("Please enter your email.");
+    return;
+  }
+
+  if(pass.length<6){
+    showError("Password must be at least 6 characters.");
+    return;
+  }
+
+  if(!loginMode && !name){
+    showError("Please enter a username.");
+    return;
+  }
+
+  authBtn.disabled=true;
+
+  authBtn.textContent=
+    loginMode ? "Logging in..." : "Creating...";
+
+  try{
+
+    if(loginMode){
+
+      const {data,error}=await db.auth.signInWithPassword({
+        email:mail,
+        password:pass
+      });
+
+      if(error) throw error;
+
+      currentUser=data.user;
+
+      await enterChat();
+
+    }else{
+
+      const {data,error}=await db.auth.signUp({
+        email:mail,
+        password:pass,
+        options:{
+          data:{
+            username:name
+          }
+        }
+      });
+
+      if(error) throw error;
+
+
+      /*
+       Email confirmation may be enabled.
+      */
+
+      if(!data.session){
+
+        showSuccess(
+          "Account created! Check your email, confirm your account, then login."
+        );
+
+        loginMode=true;
+
+        authTitle.textContent="Welcome Back";
+        usernameField.style.display="none";
+        authBtn.textContent="Login";
+
+        switchText.textContent="Don't have an account?";
+        switchBtn.textContent="Create Account";
+
+        return;
+      }
+
+
+      currentUser=data.user;
+
+
+      const {error:profileError}=await db
+      .from("profiles")
+      .insert({
+        id:data.user.id,
+        username:name
+      });
+
+      if(profileError){
+
+        if(profileError.code==="23505"){
+          throw new Error("Username already exists.");
+        }
+
+        throw profileError;
+      }
+
+      await enterChat();
+    }
+
+  }catch(error){
+
+    console.error(error);
+
+    showError(
+      error.message || "Something went wrong."
+    );
+
+  }finally{
+
+    authBtn.disabled=false;
+
+    authBtn.textContent=
+      loginMode ? "Login" : "Create Account";
+  }
+};
+
+
+/* =====================================================
+   ENTER CHAT
+   ===================================================== */
+
+async function enterChat(){
+
+  if(!currentUser) return;
+
+
+  let {data:profile,error}=await db
+  .from("profiles")
+  .select("*")
+  .eq("id",currentUser.id)
+  .maybeSingle();
+
+
+  if(error){
+    throw error;
+  }
+
+
+  /*
+   Profile missing?
+   Create a fallback profile.
+  */
+
+  if(!profile){
+
+    const fallback=
+      currentUser.user_metadata?.username ||
+      currentUser.email.split("@")[0] ||
+      "User";
+
+    const result=await db
+    .from("profiles")
+    .insert({
+      id:currentUser.id,
+      username:fallback
+    })
+    .select()
+    .single();
+
+    if(result.error){
+      throw result.error;
+    }
+
+    profile=result.data;
+  }
+
+
+  currentProfile=profile;
+
+
+  currentUsername.textContent=
+    profile.username;
+
+  avatar.textContent=
+    profile.username
+      .charAt(0)
+      .toUpperCase();
+
+
+  authScreen.style.display="none";
+  chatScreen.style.display="flex";
+
+
+  await loadMessages();
+
+  setupRealtime();
+}
+
+
+/* =====================================================
+   LOAD MESSAGES
+   ===================================================== */
+
+async function loadMessages(){
+
+  messages
+    .querySelectorAll(".messageRow")
+    .forEach(x=>x.remove());
+
+  emptyChat.style.display="flex";
+
+
+  const {data,error}=await db
+  .from("messages")
+  .select("*")
+  .order("created_at",{ascending:true})
+  .limit(100);
+
+
+  if(error){
+
+    showError(error.message);
+
+    return;
+  }
+
+
+  if(!data || data.length===0){
+
+    emptyChat.style.display="flex";
+
+    return;
+  }
+
+
+  emptyChat.style.display="none";
+
+
+  data.forEach(message=>{
+    renderMessage(message,false);
+  });
+
+
+  scrollBottom();
+}
+
+
+/* =====================================================
+   RENDER MESSAGE
+   ===================================================== */
+
+function renderMessage(message,scroll=true){
+
+  emptyChat.style.display="none";
+
+
+  const row=document.createElement("div");
+
+  const mine=
+    currentUser &&
+    message.sender_id===currentUser.id;
+
+  row.className=
+    "messageRow"+(mine?" mine":"");
+
+
+  const bubble=document.createElement("div");
+
+  bubble.className="bubble";
+
+
+  if(!mine){
+
+    const sender=document.createElement("div");
+
+    sender.className="sender";
+
+    sender.textContent=
+      message.sender_name || "User";
+
+    bubble.appendChild(sender);
+  }
+
+
+  const text=document.createElement("div");
+
+  text.className="text";
+
+  text.textContent=message.message;
+
+  bubble.appendChild(text);
+
+
+  const time=document.createElement("div");
+
+  time.className="time";
+
+  time.textContent=formatTime(
+    message.created_at
+  );
+
+  bubble.appendChild(time);
+
+
+  row.appendChild(bubble);
+
+  messages.appendChild(row);
+
+
+  if(scroll) scrollBottom();
+}
+
+
+/* =====================================================
+   TIME
+   ===================================================== */
+
+function formatTime(value){
+
+  return new Date(value).toLocaleTimeString(
+    [],
+    {
+      hour:"numeric",
+      minute:"2-digit"
+    }
+  );
+}
+
+
+/* =====================================================
+   SCROLL
+   ===================================================== */
+
+function scrollBottom(){
+
+  requestAnimationFrame(()=>{
+    messages.scrollTop=messages.scrollHeight;
+  });
+}
+
+
+/* =====================================================
+   SEND MESSAGE
+   ===================================================== */
+
+composer.onsubmit=async event=>{
+
+  event.preventDefault();
+
+  const text=messageInput.value.trim();
+
+  if(!text || !currentUser || !currentProfile){
+    return;
+  }
+
+  sendBtn.disabled=true;
+
+  try{
+
+    const {error}=await db
+    .from("messages")
+    .insert({
+      sender_id:currentUser.id,
+      sender_name:currentProfile.username,
+      message:text
+    });
+
+    if(error) throw error;
+
+    messageInput.value="";
+    resizeTextarea();
+
+  }catch(error){
+
+    showError(
+      "Message failed: "+error.message
+    );
+
+  }finally{
+
+    sendBtn.disabled=false;
+
+    messageInput.focus();
+  }
+};
+
+
+/* =====================================================
+   ENTER SEND
+   SHIFT + ENTER = NEW LINE
+   ===================================================== */
+
+messageInput.addEventListener("keydown",event=>{
+
+  if(
+    event.key==="Enter" &&
+    !event.shiftKey
+  ){
+
+    event.preventDefault();
+
+    composer.requestSubmit();
+  }
+});
+
+
+/* =====================================================
+   TEXTAREA
+   ===================================================== */
+
+function resizeTextarea(){
+
+  messageInput.style.height="auto";
+
+  messageInput.style.height=
+    Math.min(
+      messageInput.scrollHeight,
+      120
+    )+"px";
+}
+
+messageInput.addEventListener(
+  "input",
+  resizeTextarea
+);
+
+
+/* =====================================================
+   REALTIME
+   ===================================================== */
+
+function setupRealtime(){
+
+  if(realtimeChannel){
+
+    db.removeChannel(
+      realtimeChannel
+    );
+  }
+
+
+  realtimeChannel=
+    db
+    .channel("global-chat")
+    .on(
+      "postgres_changes",
+      {
+        event:"INSERT",
+        schema:"public",
+        table:"messages"
+      },
+      payload=>{
+
+        renderMessage(
+          payload.new,
+          true
+        );
+
+      }
+    )
+    .subscribe(status=>{
+
+      console.log(
+        "Realtime:",
+        status
+      );
+
+    });
+}
+
+
+/* =====================================================
+   LOGOUT
+   ===================================================== */
+
+logoutBtn.onclick=async()=>{
+
+  try{
+
+    if(realtimeChannel){
+
+      await db.removeChannel(
+        realtimeChannel
+      );
+
+      realtimeChannel=null;
+    }
+
+    await db.auth.signOut();
+
+  }catch(error){
+
+    console.error(error);
+  }
+
+
+  currentUser=null;
+  currentProfile=null;
+
+
+  chatScreen.style.display="none";
+  authScreen.style.display="flex";
+
+
+  email.value="";
+  password.value="";
+  username.value="";
+
+
+  loginMode=true;
+
+  authTitle.textContent="Welcome Back";
+
+  usernameField.style.display="none";
+
+  authBtn.textContent="Login";
+
+  switchText.textContent="Don't have an account?";
+
+  switchBtn.textContent="Create Account";
+
+  clearNotice();
+};
+
+
+/* =====================================================
+   EXISTING SESSION
+   ===================================================== */
+
+async function checkSession(){
+
+  try{
+
+    const {data}=await db.auth.getSession();
+
+    if(data.session){
+
+      currentUser=data.session.user;
+
+      await enterChat();
+
+    }else{
+
+      authScreen.style.display="flex";
+      chatScreen.style.display="none";
+    }
+
+  }catch(error){
+
+    console.error(error);
+
+    showError(
+      "Session error: "+error.message
+    );
+  }
+}
+
+
+/* =====================================================
+   AUTH STATE
+   ===================================================== */
+
+db.auth.onAuthStateChange(
+  (event,session)=>{
+
+    console.log(
+      "Auth event:",
+      event
+    );
+
+  }
+);
+
+
+/* =====================================================
+   START
+   ===================================================== */
+
+checkSession();
+
+</script>
+
+</body>
+</html>
